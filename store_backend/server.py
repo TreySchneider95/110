@@ -103,6 +103,10 @@ allCoupons = []
 def save_coupon():
     if request.method == 'POST':
         coupon = request.get_json()
+        if not "name" in coupon or len(coupon['name']) < 5:
+            return abort(400, "code is required or not valid")
+        if not "discount" in coupon or coupon['discount'] < 5 or coupon['discount'] > 50:
+            return abort(400, "discount is required or not valid")
         db.coupons.insert_one(coupon)
         coupon["_id"] = str(coupon["_id"])
         return json.dumps(coupon)
@@ -121,5 +125,51 @@ def coupon_code(code):
     return json.dumps(code)
 
 
-    
+@app.route("/api/user", methods = ['post', 'get'])
+def save_user():
+    if request.method == 'POST':
+        user = request.get_json()
+        if not "email" in user or len(user['email']) < 1:
+            return abort(400, "email is required or not valid")
+        if not "username" in user or len(user['username']) < 1:
+            return abort(400, "username is required or not valid")
+        if not "password" in user or len(user['password']) < 1:
+            return abort(400, "password is required or not valid")
+        if not "first" in user or len(user['first']) < 1:
+            return abort(400, "first name is required or not valid")
+        if not "last" in user or len(user['last']) < 1:
+            return abort(400, "last name is required or not valid")
+        db.users.insert_one(user)
+        user["_id"] = str(user["_id"])
+        return json.dumps(user)
+    elif request.method == 'GET':
+        users = list()
+        for x in db.users.find({}):
+            x["_id"] = str(x["_id"])
+            users.append(x)
+        return json.dumps(users)
+
+@app.route("/api/user/by_email/<email>", methods = ['get'])
+def find_user(email):
+    user = db.users.find_one({'email' : email})
+    user["_id"] = str(user["_id"])
+    return json.dumps(user)
+
+
+@app.route("/api/user/valid", methods = ['post'])
+def validate_user():
+    user_attempt = request.get_json()
+    if not "username" in user_attempt:
+        return abort(400, "user is required")
+    if not "password" in user_attempt:
+        return abort(400, "password is required")
+    user = db.users.find_one({'username' : user_attempt['username'], "password": user_attempt["password"]})
+    if not user:
+        return  abort(401, "user not found")
+    else:
+        user["_id"] = str(user["_id"])
+        user.pop("password")
+        return json.dumps(user)
+
+
 app.run(debug=True)
