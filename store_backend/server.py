@@ -5,10 +5,10 @@ import json
 # from mock_data import catalog
 from config import db
 from bson import ObjectId
-
+from flask_cors import CORS
 
 app = Flask('server')
-
+CORS(app)
 @app.route("/")
 def home():
     return "hello from flask"
@@ -103,9 +103,9 @@ allCoupons = []
 def save_coupon():
     if request.method == 'POST':
         coupon = request.get_json()
-        if not "name" in coupon or len(coupon['name']) < 5:
+        if not "code" in coupon or len(coupon['code']) < 5:
             return abort(400, "code is required or not valid")
-        if not "discount" in coupon or coupon['discount'] < 5 or coupon['discount'] > 50:
+        if not "discount" in coupon or int(coupon['discount']) < 5 or int(coupon['discount']) > 50:
             return abort(400, "discount is required or not valid")
         db.coupons.insert_one(coupon)
         coupon["_id"] = str(coupon["_id"])
